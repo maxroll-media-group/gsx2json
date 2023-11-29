@@ -24,6 +24,11 @@ app.use(bodyParser.json())
 // Get API route
 app.get('/api', api)
 
+// healthz
+app.get('/healthz', (req: express.Request, res: express.Response) => {
+  res.status(200).json('OK')
+})
+
 // Error handler
 app.use(
   (

@@ -71,10 +71,14 @@ jobs:
       - uses: imranismail/setup-kustomize@v2
       - name: "Replace image name and auth key"
         run: |
-          echo "Building k8s files..."
-          sed -i "s|IMAGE_NAME|${{ env.FULL_IMAGE }}:sha-${{ steps.set-sha.outputs.sha_short }}|g" ./k8s/deployment.yaml
-          sed -i "s|GOOGLE_AUTHZ_KEY|${{ secrets.GOOGLE_AUTH_KEY }}|g" ./k8s/deployment.yaml
-          sed -i "s|DOMAIN_NAME|${{ secrets.DOMAIN_NAME }}|g" ./k8s/deployment.yaml
+
+          cd k8s
+
+          $(kustomize edit set image IMAGE=${{ env.FULL_IMAGE }}:sha-${{ steps.set-sha.outputs.sha_short }})
+
+          kustomize build . | envsubst > ${{ github.workspace }}/files.yaml
+        env:
+          domain: ${{ secrets.DOMAIN }}
       - uses: azure/setup-kubectl@v3
       - uses: azure/k8s-set-context@v3
         with:
@@ -85,9 +89,9 @@ jobs:
         with:
           action: deploy
           strategy: basic
-          namespace: ${{ vars.ENV }}
+          namespace: default
           manifests: |
-            ${{ github.workspace }}/k8s/deployment.yaml
+            ${{ github.workspace }}/files.yaml
           images: '${{ env.FULL_IMAGE }}:sha-${{ steps.set-sha.outputs.sha_short }}'
           imagepullsecrets: |
             maxroll-registry
