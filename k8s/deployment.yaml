@@ -15,12 +15,15 @@ spec:
     spec:
       containers:
         - name: gsx2json-container
-          image: "IMAGE_NAME"
+          image: IMAGE
           env:
             - name: PORT
               value: "80"
             - name: GOOGLE_AUTH_KEY
-              value: "GOOGLE_AUTHZ_KEY"
+              valueFrom:
+                secretKeyRef:
+                  name: gsx2json
+                  key: api_key
           ports:
             - containerPort: 80
           readinessProbe:

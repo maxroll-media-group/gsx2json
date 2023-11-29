@@ -1,0 +1,12 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: gsx2json-service
+spec:
+  selector:
+    app: gsx2json
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
