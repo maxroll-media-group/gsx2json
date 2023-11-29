@@ -72,8 +72,6 @@ jobs:
       - name: "Run Kustomize"
         run: |
           echo "Building k8s files..."
-          cd kubernetes
-
           sed -i "s|IMAGE_NAME|${{ env.FULL_IMAGE }}:sha-${{ steps.set-sha.outputs.sha_short }}|g" ./k8s/deployment.yaml
           sed -i "s|GOOGLE_AUTHZ_KEY|${{ secrets.GOOGLE_AUTH_KEY }}|g" ./k8s/deployment.yaml
       - uses: azure/setup-kubectl@v3
