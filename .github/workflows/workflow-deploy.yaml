@@ -1,0 +1,94 @@
+name: Build and Deploy
+# run-name: Deploy triggered by @${{ github.actor }}
+
+on:
+  push:
+    # branches:
+    #   - main
+
+env:
+  IMAGE_NAME: gsx2json
+  FULL_IMAGE: registry.maxroll.net:4000/gsx2json
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    steps:
+      - name: echo environment
+        run: |
+          echo "Environment: ${{ vars.ENV }}"
+          echo "Image name: ${{ env.FULL_IMAGE }}"
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.FULL_IMAGE }}
+          tags: |
+            type=raw,value=latest,enable: ${{ github.ref == format('refs/heads/{0}', 'main') }}
+            type=sha
+      - name: Login to Docker Registry
+        uses: docker/login-action@v2
+        with:
+          registry: registry.maxroll.net:4000
+          username: ${{ secrets.MAXROLL_REGISTRY_USERNAME }}
+          password: ${{ secrets.MAXROLL_REGISTRY_PASSWORD }}
+
+      - uses: docker/setup-buildx-action@v2
+      - uses: docker/build-push-action@v4
+        with:
+          context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    name: 'Deploy to K8s'
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@master
+      - name: Set SHA
+        id: set-sha
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: Echo image to deploy
+        run: |
+          echo "Deploying: ${{ env.FULL_IMAGE }}:sha-${{ steps.set-sha.outputs.sha_short }}"
+      - name: Login to Docker Registry
+        uses: docker/login-action@v2
+        with:
+          registry: registry.maxroll.net:4000
+          username: ${{ secrets.MAXROLL_REGISTRY_USERNAME }}
+          password: ${{ secrets.MAXROLL_REGISTRY_PASSWORD }}
+      - uses: imranismail/setup-kustomize@v2
+      - name: "Run Kustomize"
+        run: |
+          echo "Building k8s files..."
+          cd kubernetes
+
+          sed -i "s|IMAGE_NAME|${{ env.FULL_IMAGE }}:sha-${{ steps.set-sha.outputs.sha_short }}|g" ./k8s/deployment.yaml
+          sed -i "s|GOOGLE_AUTHZ_KEY|${{ secrets.GOOGLE_AUTH_KEY }}|g" ./k8s/deployment.yaml
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+        id: setcontext
+      - uses: Azure/k8s-deploy@v4
+        with:
+          action: deploy
+          strategy: basic
+          namespace: ${{ vars.ENV }}
+          manifests: |
+            ${{ github.workspace }}/deployment.yaml
+          images: '${{ env.FULL_IMAGE }}:sha-${{ steps.set-sha.outputs.sha_short }}'
+          imagepullsecrets: |
+            maxroll-registry

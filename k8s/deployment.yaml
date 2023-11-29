@@ -1,0 +1,37 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gsx2json
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gsx2json
+  template:
+    metadata:
+      labels:
+        app: gsx2json
+    spec:
+      containers:
+        - name: gsx2json-container
+          image: "IMAGE_NAME"
+          environment:
+            - name: PORT
+              value: "80"
+            - name: GOOGLE_AUTH_KEY
+              value: "GOOGLE_AUTHZ_KEY"
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
