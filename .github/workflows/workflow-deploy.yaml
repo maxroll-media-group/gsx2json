@@ -78,7 +78,7 @@ jobs:
 
           kustomize build . | envsubst > ${{ github.workspace }}/files.yaml
         env:
-          domain: ${{ secrets.DOMAIN }}
+          domain: ${{ secrets.DOMAIN_NAME }}
       - uses: azure/setup-kubectl@v3
       - uses: azure/k8s-set-context@v3
         with:
