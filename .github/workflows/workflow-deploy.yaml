@@ -71,27 +71,13 @@ jobs:
       - uses: imranismail/setup-kustomize@v2
       - name: "Replace image name and auth key"
         run: |
-
           cd k8s
+          kustomize edit set image IMAGE=${{ env.FULL_IMAGE }}:sha-${{ steps.set-sha.outputs.sha_short }}
+      - name: Commit generated files
+        run: |
+          git config --global user.name 'Maxroll Bot'
+          git config --global user.email 'contact@maxroll.gg'
 
-          $(kustomize edit set image IMAGE=${{ env.FULL_IMAGE }}:sha-${{ steps.set-sha.outputs.sha_short }})
-
-          kustomize build . | envsubst > ${{ github.workspace }}/files.yaml
-        env:
-          domain: ${{ secrets.DOMAIN_NAME }}
-      - uses: azure/setup-kubectl@v3
-      - uses: azure/k8s-set-context@v3
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBECONFIG }}
-        id: setcontext
-      - uses: Azure/k8s-deploy@v4
-        with:
-          action: deploy
-          strategy: basic
-          namespace: default
-          manifests: |
-            ${{ github.workspace }}/files.yaml
-          images: '${{ env.FULL_IMAGE }}:sha-${{ steps.set-sha.outputs.sha_short }}'
-          imagepullsecrets: |
-            maxroll-registry
+          git add .
+          git commit -m "[skip ci] Update deployment"
+          git push

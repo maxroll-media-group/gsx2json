@@ -13,6 +13,8 @@ spec:
       labels:
         app: gsx2json
     spec:
+      imagePullSecrets:
+        - name: maxroll-registry-v2
       containers:
         - name: gsx2json-container
           image: IMAGE

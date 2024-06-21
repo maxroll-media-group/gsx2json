@@ -13,10 +13,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-      - "${domain}"
+      - "gsx2json.maxroll.gg"
       secretName: gsx2json-tls
   rules:
-  - host: "${domain}"
+  - host: "gsx2json.maxroll.gg"
     http:
       paths:
       - path: /
