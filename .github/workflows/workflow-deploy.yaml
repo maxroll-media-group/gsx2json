@@ -8,7 +8,7 @@ on:
 
 env:
   IMAGE_NAME: gsx2json
-  FULL_IMAGE: registry.maxroll.net:4000/gsx2json
+  FULL_IMAGE: registry.maxroll.gg/internal/gsx2json
 
 jobs:
   build-and-push:
@@ -33,10 +33,9 @@ jobs:
       - name: Login to Docker Registry
         uses: docker/login-action@v2
         with:
-          registry: registry.maxroll.net:4000
-          username: ${{ secrets.MAXROLL_REGISTRY_USERNAME }}
-          password: ${{ secrets.MAXROLL_REGISTRY_PASSWORD }}
-
+          registry: registry.maxroll.gg
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
       - uses: docker/setup-buildx-action@v2
       - uses: docker/build-push-action@v4
         with:
@@ -56,6 +55,8 @@ jobs:
     steps:
       - name: 'Checkout'
         uses: actions/checkout@master
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
       - name: Set SHA
         id: set-sha
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
