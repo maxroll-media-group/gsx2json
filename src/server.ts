@@ -1,6 +1,7 @@
 import bodyParser from 'body-parser'
 import express from 'express'
 import api from './api.js'
+import apiV2 from './apiV2.js'
 
 const app = express()
 const port = process.env.PORT || 5000
@@ -23,6 +24,9 @@ app.use(bodyParser.json())
 
 // Get API route
 app.get('/api', api)
+
+// get API v2 route
+app.get('/api/v2', apiV2)
 
 // healthz
 app.get('/healthz', (req: express.Request, res: express.Response) => {
