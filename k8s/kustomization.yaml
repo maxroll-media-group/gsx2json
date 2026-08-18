@@ -8,4 +8,4 @@ resources:
 images:
 - name: IMAGE
   newName: registry.maxroll.gg/internal/gsx2json
-  newTag: sha-a563699
+  newTag: sha-ad55cbe
