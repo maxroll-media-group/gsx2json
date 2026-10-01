@@ -1,0 +1,35 @@
+name: GHCR Retention
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Only report versions that would be deleted
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Keep the 3 most recent prod-sha-*, stag-sha-* and dev-sha-* versions
+        prefix: [prod, stag, dev]
+    steps:
+      - uses: snok/container-retention-policy@v3.1.0
+        with:
+          account: maxroll-media-group
+          token: ${{ secrets.GITHUB_TOKEN }}
+          image-names: gsx2json
+          image-tags: '${{ matrix.prefix }}-sha-*'
+          keep-n-most-recent: 3
+          cut-off: 1s
+          timestamp-to-use: created_at
+          dry-run: ${{ github.event_name == 'schedule' && 'false' || inputs.dry-run }}
