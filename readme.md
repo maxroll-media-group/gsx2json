@@ -69,3 +69,10 @@ There are two sections to the returned data - Columns (containing the names of e
 }
 
 ```
+
+## Deployment
+
+Production runs on Kubernetes, with manifests centralized in the
+[infrastructure](https://github.com/maxroll-media-group/infrastructure) repo
+(`kubernetes/applications/base/maxroll/gsx2json`). CI only builds and pushes the
+image to GHCR (`prod-sha-*`); ArgoCD Image Updater pins the newest tag.

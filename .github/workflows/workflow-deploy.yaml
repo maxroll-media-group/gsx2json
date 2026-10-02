@@ -1,5 +1,4 @@
-name: Build and Deploy
-# run-name: Deploy triggered by @${{ github.actor }}
+name: Build and Push
 
 on:
   push:
@@ -17,12 +16,9 @@ jobs:
     permissions:
       contents: read
       packages: write
-    environment:
-      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
     steps:
-      - name: echo environment
+      - name: echo image targets
         run: |
-          echo "Environment: ${{ vars.ENV }}"
           echo "Image name: ${{ env.FULL_IMAGE }}"
           echo "GHCR image: ${{ env.GHCR_IMAGE }}"
       - name: Checkout code
@@ -79,40 +75,3 @@ jobs:
             ${{ steps.meta.outputs.tags }}
             ${{ steps.meta-ghcr.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-  deploy:
-    name: 'Deploy to K8s'
-    environment:
-      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: 'Checkout'
-        uses: actions/checkout@master
-        with:
-          token: ${{ secrets.BOT_TOKEN }}
-      - name: Set SHA
-        id: set-sha
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-      - name: Echo image to deploy
-        run: |
-          echo "Deploying: ${{ env.FULL_IMAGE }}:sha-${{ steps.set-sha.outputs.sha_short }}"
-      - name: Login to Docker Registry
-        uses: docker/login-action@v2
-        with:
-          registry: registry.maxroll.net:4000
-          username: ${{ secrets.MAXROLL_REGISTRY_USERNAME }}
-          password: ${{ secrets.MAXROLL_REGISTRY_PASSWORD }}
-      - uses: imranismail/setup-kustomize@v2
-      - name: "Replace image name and auth key"
-        run: |
-          cd k8s
-          kustomize edit set image IMAGE=${{ env.FULL_IMAGE }}:sha-${{ steps.set-sha.outputs.sha_short }}
-      - name: Commit generated files
-        run: |
-          git config --global user.name 'Maxroll Bot'
-          git config --global user.email 'contact@maxroll.gg'
-
-          git add .
-          git commit -m "[skip ci] Update deployment"
-          git push
